@@ -113,6 +113,209 @@ class TestUniform:
         assert_series_equal(result, expected, abs_tol=1e-12)
 
 
+class TestLogNormal:
+    def test_cdf_known(self):
+        # LogNormal CDF(1.0, mu=0, sigma=1) = Normal CDF(0) = 0.5
+        df = pl.DataFrame({"x": [1.0]})
+        result = df.select(sdist(pl.col("x")).lognormal_cdf(mu=0, sigma=1)).to_series()
+        assert abs(result[0] - 0.5) < 1e-10
+
+    def test_roundtrip(self):
+        df = pl.DataFrame({"x": [0.5, 1.0, 2.0, 5.0]})
+        result = df.select(
+            sdist(sdist(pl.col("x")).lognormal_cdf(mu=0, sigma=1)).lognormal_ppf(
+                mu=0, sigma=1
+            )
+        ).to_series()
+        assert_series_equal(result, df["x"], abs_tol=1e-10)
+
+
+class TestGamma:
+    def test_cdf_known(self):
+        # Gamma(shape=1, rate=1) is Exponential(1): CDF(x) = 1 - exp(-x)
+        df = pl.DataFrame({"x": [0.0, 1.0, 2.0]})
+        result = df.select(sdist(pl.col("x")).gamma_cdf(shape=1.0, rate=1.0)).to_series()
+        expected = pl.Series("x", [0.0, 1 - math.exp(-1), 1 - math.exp(-2)])
+        assert_series_equal(result, expected, abs_tol=1e-10)
+
+    def test_roundtrip(self):
+        df = pl.DataFrame({"x": [0.5, 1.0, 2.0, 4.0]})
+        result = df.select(
+            sdist(sdist(pl.col("x")).gamma_cdf(shape=2.0, rate=1.5)).gamma_ppf(
+                shape=2.0, rate=1.5
+            )
+        ).to_series()
+        assert_series_equal(result, df["x"], abs_tol=1e-10)
+
+
+class TestCauchy:
+    def test_cdf_known(self):
+        # Cauchy CDF(0, loc=0, scale=1) = 0.5
+        df = pl.DataFrame({"x": [0.0]})
+        result = df.select(sdist(pl.col("x")).cauchy_cdf(location=0.0, scale=1.0)).to_series()
+        assert abs(result[0] - 0.5) < 1e-10
+
+    def test_roundtrip(self):
+        df = pl.DataFrame({"x": [-2.0, -1.0, 0.0, 1.0, 2.0]})
+        result = df.select(
+            sdist(sdist(pl.col("x")).cauchy_cdf(location=0.0, scale=1.0)).cauchy_ppf(
+                location=0.0, scale=1.0
+            )
+        ).to_series()
+        assert_series_equal(result, df["x"], abs_tol=1e-10)
+
+
+class TestChiSquared:
+    def test_cdf_known(self):
+        # ChiSquared(df=2) is Exponential(1/2): CDF(x) = 1 - exp(-x/2)
+        df = pl.DataFrame({"x": [2.0]})
+        result = df.select(sdist(pl.col("x")).chi_squared_cdf(df=2)).to_series()
+        expected = 1 - math.exp(-1)
+        assert abs(result[0] - expected) < 1e-10
+
+    def test_roundtrip(self):
+        df = pl.DataFrame({"x": [1.0, 3.0, 5.0, 10.0]})
+        result = df.select(
+            sdist(sdist(pl.col("x")).chi_squared_cdf(df=4)).chi_squared_ppf(df=4)
+        ).to_series()
+        assert_series_equal(result, df["x"], abs_tol=1e-10)
+
+
+class TestFisherSnedecor:
+    def test_cdf_known(self):
+        # F(d1, d2) median ≈ 1 when d1 = d2 (symmetric case)
+        # CDF(1.0) for F(10, 10) ≈ 0.5
+        df = pl.DataFrame({"x": [1.0]})
+        result = df.select(sdist(pl.col("x")).fisher_snedecor_cdf(d1=10, d2=10)).to_series()
+        assert abs(result[0] - 0.5) < 1e-6
+
+    def test_roundtrip(self):
+        df = pl.DataFrame({"x": [0.5, 1.0, 2.0, 3.0]})
+        result = df.select(
+            sdist(sdist(pl.col("x")).fisher_snedecor_cdf(d1=5, d2=10)).fisher_snedecor_ppf(
+                d1=5, d2=10
+            )
+        ).to_series()
+        assert_series_equal(result, df["x"], abs_tol=1e-10)
+
+
+class TestGumbel:
+    def test_cdf_known(self):
+        # Gumbel CDF(loc) = exp(-exp(0)) = exp(-1) ≈ 0.3679
+        location = 2.0
+        df = pl.DataFrame({"x": [location]})
+        result = df.select(sdist(pl.col("x")).gumbel_cdf(location=location, scale=1.0)).to_series()
+        expected = math.exp(-1)
+        assert abs(result[0] - expected) < 1e-10
+
+    def test_roundtrip(self):
+        df = pl.DataFrame({"x": [0.0, 1.0, 3.0, 5.0]})
+        result = df.select(
+            sdist(sdist(pl.col("x")).gumbel_cdf(location=1.0, scale=2.0)).gumbel_ppf(
+                location=1.0, scale=2.0
+            )
+        ).to_series()
+        assert_series_equal(result, df["x"], abs_tol=1e-10)
+
+
+class TestInverseGamma:
+    def test_cdf_known(self):
+        # InverseGamma CDF(x; shape, scale) = Gamma_upper(shape, scale/x) / Gamma(shape)
+        # For shape=1, scale=1: CDF(x) = exp(-1/x), so CDF(1) = exp(-1)
+        df = pl.DataFrame({"x": [1.0]})
+        result = df.select(sdist(pl.col("x")).inverse_gamma_cdf(shape=1.0, scale=1.0)).to_series()
+        expected = math.exp(-1)
+        assert abs(result[0] - expected) < 1e-10
+
+    def test_roundtrip(self):
+        df = pl.DataFrame({"x": [0.5, 1.0, 2.0, 4.0]})
+        result = df.select(
+            sdist(sdist(pl.col("x")).inverse_gamma_cdf(shape=2.0, scale=1.0)).inverse_gamma_ppf(
+                shape=2.0, scale=1.0
+            )
+        ).to_series()
+        assert_series_equal(result, df["x"], abs_tol=1e-4)
+
+
+class TestLaplace:
+    def test_cdf_known(self):
+        # Laplace CDF(loc) = 0.5
+        df = pl.DataFrame({"x": [0.0]})
+        result = df.select(sdist(pl.col("x")).laplace_cdf(location=0.0, scale=1.0)).to_series()
+        assert abs(result[0] - 0.5) < 1e-10
+
+    def test_roundtrip(self):
+        df = pl.DataFrame({"x": [-2.0, -1.0, 0.0, 1.0, 2.0]})
+        result = df.select(
+            sdist(sdist(pl.col("x")).laplace_cdf(location=0.0, scale=1.0)).laplace_ppf(
+                location=0.0, scale=1.0
+            )
+        ).to_series()
+        assert_series_equal(result, df["x"], abs_tol=1e-10)
+
+
+class TestPareto:
+    def test_cdf_known(self):
+        # Pareto: shape=x_m (minimum), scale=alpha (tail index)
+        # CDF(x) = 1 - (shape/x)^scale for x >= shape
+        shape = 2.0  # x_m
+        scale = 1.0  # alpha
+        x = 5.0
+        expected = 1 - (shape / x) ** scale  # 1 - (2/5)^1 = 0.6
+        df = pl.DataFrame({"x": [x]})
+        result = df.select(sdist(pl.col("x")).pareto_cdf(shape=shape, scale=scale)).to_series()
+        assert abs(result[0] - expected) < 1e-10
+
+    def test_roundtrip(self):
+        # x values must be >= shape (x_m)
+        df = pl.DataFrame({"x": [3.0, 4.0, 6.0, 10.0]})
+        result = df.select(
+            sdist(sdist(pl.col("x")).pareto_cdf(shape=3.0, scale=2.0)).pareto_ppf(
+                shape=3.0, scale=2.0
+            )
+        ).to_series()
+        assert_series_equal(result, df["x"], abs_tol=1e-4)
+
+
+class TestTriangular:
+    def test_cdf_known(self):
+        # Symmetric triangular on [0, 2] with mode=1:
+        # CDF(1) = 0.5 by symmetry
+        df = pl.DataFrame({"x": [1.0]})
+        result = df.select(sdist(pl.col("x")).triangular_cdf(min=0.0, max=2.0, mode=1.0)).to_series()
+        assert abs(result[0] - 0.5) < 1e-10
+
+    def test_roundtrip(self):
+        df = pl.DataFrame({"x": [0.2, 0.5, 1.0, 1.5, 1.8]})
+        result = df.select(
+            sdist(sdist(pl.col("x")).triangular_cdf(min=0.0, max=2.0, mode=1.0)).triangular_ppf(
+                min=0.0, max=2.0, mode=1.0
+            )
+        ).to_series()
+        assert_series_equal(result, df["x"], abs_tol=1e-10)
+
+
+class TestWeibull:
+    def test_cdf_known(self):
+        # Weibull CDF(x; shape, scale) = 1 - exp(-(x/scale)^shape)
+        shape = 2.0
+        scale = 1.0
+        x = 1.0
+        expected = 1 - math.exp(-(x / scale) ** shape)
+        df = pl.DataFrame({"x": [x]})
+        result = df.select(sdist(pl.col("x")).weibull_cdf(shape=shape, scale=scale)).to_series()
+        assert abs(result[0] - expected) < 1e-10
+
+    def test_roundtrip(self):
+        df = pl.DataFrame({"x": [0.5, 1.0, 2.0, 3.0]})
+        result = df.select(
+            sdist(sdist(pl.col("x")).weibull_cdf(shape=1.5, scale=2.0)).weibull_ppf(
+                shape=1.5, scale=2.0
+            )
+        ).to_series()
+        assert_series_equal(result, df["x"], abs_tol=1e-10)
+
+
 # ── Discrete distributions ──
 
 
@@ -146,6 +349,100 @@ class TestBernoulli:
         result = df.select(sdist(pl.col("k")).bernoulli_pmf(p=0.7)).to_series()
         assert abs(result[0] - 0.3) < 1e-10
         assert abs(result[1] - 0.7) < 1e-10
+
+
+class TestGeometric:
+    def test_pmf_known(self):
+        # Geometric PMF(k=1, p) = p (first trial succeeds)
+        p = 0.4
+        df = pl.DataFrame({"k": [1.0]})
+        result = df.select(sdist(pl.col("k")).geometric_pmf(p=p)).to_series()
+        assert abs(result[0] - p) < 1e-10
+
+    def test_cdf_known(self):
+        # Geometric CDF(k, p) = 1 - (1-p)^k
+        p = 0.3
+        k = 3.0
+        expected = 1 - (1 - p) ** int(k)
+        df = pl.DataFrame({"k": [k]})
+        result = df.select(sdist(pl.col("k")).geometric_cdf(p=p)).to_series()
+        assert abs(result[0] - expected) < 1e-10
+
+
+class TestHypergeometric:
+    def test_pmf_known(self):
+        # Hypergeometric: pop_size=10, success_states=5, draws=4
+        # P(X=2) = C(5,2)*C(5,2) / C(10,4) = 10*10/210 = 100/210
+        pop_size = 10
+        success_states = 5
+        draws = 4
+        k = 2.0
+        expected = (
+            math.comb(success_states, 2)
+            * math.comb(pop_size - success_states, draws - 2)
+            / math.comb(pop_size, draws)
+        )
+        df = pl.DataFrame({"k": [k]})
+        result = df.select(
+            sdist(pl.col("k")).hypergeometric_pmf(
+                pop_size=pop_size, success_states=success_states, draws=draws
+            )
+        ).to_series()
+        assert abs(result[0] - expected) < 1e-10
+
+    def test_cdf_at_draws(self):
+        # CDF(draws) = 1.0 (all draws from successes is the maximum possible)
+        pop_size = 20
+        success_states = 7
+        draws = 5
+        df = pl.DataFrame({"k": [float(draws)]})
+        result = df.select(
+            sdist(pl.col("k")).hypergeometric_cdf(
+                pop_size=pop_size, success_states=success_states, draws=draws
+            )
+        ).to_series()
+        assert abs(result[0] - 1.0) < 1e-10
+
+
+class TestNegativeBinomial:
+    def test_pmf_known(self):
+        # NegativeBinomial PMF(k=0; r, p) = p^r
+        r = 3
+        p = 0.6
+        expected = p**r
+        df = pl.DataFrame({"k": [0.0]})
+        result = df.select(sdist(pl.col("k")).negative_binomial_pmf(r=r, p=p)).to_series()
+        assert abs(result[0] - expected) < 1e-10
+
+    def test_cdf_known(self):
+        # NegativeBinomial CDF(0; r, p) = p^r (only 0 failures possible at k=0)
+        r = 2
+        p = 0.5
+        expected = p**r
+        df = pl.DataFrame({"k": [0.0]})
+        result = df.select(sdist(pl.col("k")).negative_binomial_cdf(r=r, p=p)).to_series()
+        assert abs(result[0] - expected) < 1e-10
+
+
+class TestDiscreteUniform:
+    def test_pmf_known(self):
+        # DiscreteUniform PMF = 1/(b - a + 1)
+        a = 1
+        b = 5
+        expected = 1.0 / (b - a + 1)
+        df = pl.DataFrame({"k": [1.0, 3.0, 5.0]})
+        result = df.select(sdist(pl.col("k")).discrete_uniform_pmf(a=a, b=b)).to_series()
+        for v in result.to_list():
+            assert abs(v - expected) < 1e-10
+
+    def test_cdf_known(self):
+        # DiscreteUniform CDF(b) = 1.0 and CDF(a) = 1/(b-a+1)
+        a = 1
+        b = 5
+        df = pl.DataFrame({"k": [float(a), float(b)]})
+        result = df.select(sdist(pl.col("k")).discrete_uniform_cdf(a=a, b=b)).to_series()
+        assert abs(result[0] - 1.0 / (b - a + 1)) < 1e-10
+        assert abs(result[1] - 1.0) < 1e-10
 
 
 # ── Null propagation ──
