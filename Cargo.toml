@@ -1,0 +1,26 @@
+[package]
+name = "polars-sdist"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "_polars_sdist"
+crate-type = ["cdylib"]
+
+[dependencies]
+polars = { version = "0.53", default-features = false }
+polars-core = { version = "0.53" }
+polars-arrow = { version = "0.53" }
+pyo3 = { version = "0.27", features = ["abi3-py39"] }
+pyo3-polars = { version = "0.26", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+statrs = "0.18"
+rand = "0.9"
+rand_distr = "0.5"
+num-traits = "0.2"
+
+[profile.release]
+strip = true
+lto = "fat"
+codegen-units = 1
+opt-level = 3
