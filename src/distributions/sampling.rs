@@ -147,7 +147,12 @@ fn dist_sample(inputs: &[Series], kwargs: DistKwargs) -> PolarsResult<Series> {
     let n = inputs[0].len();
     let mut rng = make_rng(kwargs.seed);
     let values: Vec<f64> = dispatch_sample!(
-        kwargs.dist.as_str(), kwargs.param1, kwargs.param2, kwargs.param3, n, rng
+        kwargs.dist.as_str(),
+        kwargs.param1,
+        kwargs.param2,
+        kwargs.param3,
+        n,
+        rng
     )?;
     let ca = Float64Chunked::from_vec("sample".into(), values);
     Ok(ca.into_series())
@@ -157,8 +162,16 @@ fn dist_sample(inputs: &[Series], kwargs: DistKwargs) -> PolarsResult<Series> {
 #[polars_expr(output_type=Float64)]
 fn dist_sample_col(inputs: &[Series], kwargs: DistKwargs) -> PolarsResult<Series> {
     let p1_ca = inputs[0].f64()?;
-    let p2_ca = if inputs.len() > 1 { Some(inputs[1].f64()?) } else { None };
-    let p3_ca = if inputs.len() > 2 { Some(inputs[2].f64()?) } else { None };
+    let p2_ca = if inputs.len() > 1 {
+        Some(inputs[1].f64()?)
+    } else {
+        None
+    };
+    let p3_ca = if inputs.len() > 2 {
+        Some(inputs[2].f64()?)
+    } else {
+        None
+    };
     let n = p1_ca.len();
     let mut rng = make_rng(kwargs.seed);
     let dist_name = kwargs.dist.as_str();
@@ -176,9 +189,7 @@ fn dist_sample_col(inputs: &[Series], kwargs: DistKwargs) -> PolarsResult<Series
         }
         let p1 = p1.unwrap();
 
-        let sampled: Vec<f64> = dispatch_sample!(
-            dist_name, p1, p2, p3, 1usize, rng
-        )?;
+        let sampled: Vec<f64> = dispatch_sample!(dist_name, p1, p2, p3, 1usize, rng)?;
         values.push(Some(sampled[0]));
     }
 
