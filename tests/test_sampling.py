@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import math
-
 import polars as pl
-import pytest
 
-import polars_sdist  # noqa: F401
+from polars_sdist import SdistNamespace as sdist
+import polars_sdist
 
 
 class TestFixedParamSampling:
@@ -57,7 +55,7 @@ class TestColumnParamSampling:
     def test_normal_col(self):
         df = pl.DataFrame({"mu": [0.0, 10.0, -10.0], "sigma": [0.001, 0.001, 0.001]})
         result = df.with_columns(
-            pl.col("mu").sdist.sample_normal(sigma=pl.col("sigma"), seed=42)
+            sdist(pl.col("mu")).sample_normal(sigma=pl.col("sigma"), seed=42)
         )
         samples = result["mu"].to_list()
         assert abs(samples[0] - 0.0) < 0.1
