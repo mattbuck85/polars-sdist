@@ -93,8 +93,8 @@ def sample_inverse_gaussian(n: int, mean: float, shape: float, seed: int | None 
     return _sample("inverse_gaussian", n, mean, shape, seed=seed)
 
 
-def sample_frechet(n: int, location: float, scale: float, seed: int | None = None) -> pl.Series:
-    return _sample("frechet", n, location, scale, seed=seed)
+def sample_frechet(n: int, location: float, scale: float, shape: float, seed: int | None = None) -> pl.Series:
+    return _sample("frechet", n, location, scale, shape, seed=seed)
 
 
 def sample_zeta(n: int, s: float, seed: int | None = None) -> pl.Series:

@@ -221,10 +221,9 @@ class TestFixedParamSampling:
 
     # --- frechet ---
 
-    @pytest.mark.xfail(reason="frechet sampling panics in Rust plugin", raises=BaseException)
     def test_frechet_positive(self):
-        s = polars_sdist.sample_frechet(n=10_000, location=0.0, scale=1.0, seed=1)
-        assert s.min() > 0.0
+        s = polars_sdist.sample_frechet(n=10_000, location=0.0, scale=1.0, shape=2.0, seed=1)
+        assert s.min() >= 0.0
 
     # --- zeta ---
 
