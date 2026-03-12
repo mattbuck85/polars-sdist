@@ -13,6 +13,31 @@ class TestFixedParamSampling:
         s2 = polars_sdist.sample_normal(n=100, mu=0, sigma=1, seed=42)
         assert s1.to_list() == s2.to_list()
 
+    @pytest.mark.parametrize("sample_fn, kwargs", [
+        (polars_sdist.sample_normal, {"mu": 0, "sigma": 1}),
+        (polars_sdist.sample_lognormal, {"mu": 0, "sigma": 1}),
+        (polars_sdist.sample_beta, {"alpha": 2, "beta": 5}),
+        (polars_sdist.sample_chi_squared, {"df": 5}),
+        (polars_sdist.sample_binomial, {"trials": 10, "p": 0.5}),
+        (polars_sdist.sample_poisson, {"lambda_": 3.0}),
+        (polars_sdist.sample_exponential, {"lambda_": 1.0}),
+        (polars_sdist.sample_gamma, {"shape": 2, "rate": 1}),
+        (polars_sdist.sample_uniform, {"a": 0, "b": 1}),
+        (polars_sdist.sample_students_t, {"df": 10}),
+        (polars_sdist.sample_cauchy, {"location": 0, "scale": 1}),
+        (polars_sdist.sample_laplace, {"location": 0, "scale": 1}),
+        (polars_sdist.sample_bernoulli, {"p": 0.5}),
+        (polars_sdist.sample_geometric, {"p": 0.3}),
+        (polars_sdist.sample_weibull, {"shape": 2, "scale": 1}),
+    ])
+    def test_seeded_determinism(self, sample_fn, kwargs):
+        s1 = sample_fn(n=500, **kwargs, seed=99)
+        s2 = sample_fn(n=500, **kwargs, seed=99)
+        assert s1.to_list() == s2.to_list()
+        # Different seed produces different output
+        s3 = sample_fn(n=500, **kwargs, seed=100)
+        assert s1.to_list() != s3.to_list()
+
     def test_normal_stats(self):
         s = polars_sdist.sample_normal(n=50_000, mu=5.0, sigma=2.0, seed=123)
         assert abs(s.mean() - 5.0) < 0.1
