@@ -2,17 +2,7 @@ from __future__ import annotations
 
 import polars as pl
 
-from polars_sdist._utils import pl_plugin
-
-
-def _sample_kwargs(
-    dist: str,
-    param1: float,
-    param2: float | None = None,
-    param3: float | None = None,
-    seed: int | None = None,
-) -> dict:
-    return {"dist": dist, "param1": param1, "param2": param2, "param3": param3, "seed": seed}
+from polars_sdist._polars_sdist import sample_direct as _sample_rs
 
 
 def _sample(
@@ -24,20 +14,7 @@ def _sample(
     seed: int | None = None,
 ) -> pl.Series:
     """Generate n samples from the given distribution with fixed parameters."""
-    # Create a dummy series of length n to drive the plugin
-    dummy = pl.Series("_dummy", list(range(n)), dtype=pl.Float64)
-    result = (
-        dummy.to_frame()
-        .select(
-            pl_plugin(
-                symbol="dist_sample",
-                args=[pl.col("_dummy")],
-                kwargs=_sample_kwargs(dist, param1, param2, param3, seed),
-            )
-        )
-        .to_series()
-    )
-    return result.alias("sample")
+    return _sample_rs(dist, n, param1, param2, param3, seed)
 
 
 def sample_normal(n: int, mu: float = 0.0, sigma: float = 1.0, seed: int | None = None) -> pl.Series:

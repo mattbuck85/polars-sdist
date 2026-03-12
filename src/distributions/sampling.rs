@@ -141,18 +141,30 @@ macro_rules! dispatch_sample {
     }};
 }
 
+/// Core sampling logic: returns a Vec<f64> of N draws from the given distribution.
+pub(crate) fn sample_vec(
+    dist: &str,
+    n: usize,
+    param1: f64,
+    param2: Option<f64>,
+    param3: Option<f64>,
+    seed: Option<u64>,
+) -> PolarsResult<Vec<f64>> {
+    let mut rng = make_rng(seed);
+    dispatch_sample!(dist, param1, param2, param3, n, rng)
+}
+
 /// Fixed-parameter sampling: generates a series of N draws.
 #[polars_expr(output_type=Float64)]
 fn dist_sample(inputs: &[Series], kwargs: DistKwargs) -> PolarsResult<Series> {
     let n = inputs[0].len();
-    let mut rng = make_rng(kwargs.seed);
-    let values: Vec<f64> = dispatch_sample!(
+    let values = sample_vec(
         kwargs.dist.as_str(),
+        n,
         kwargs.param1,
         kwargs.param2,
         kwargs.param3,
-        n,
-        rng
+        kwargs.seed,
     )?;
     let ca = Float64Chunked::from_vec("sample".into(), values);
     Ok(ca.into_series())
