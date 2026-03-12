@@ -17,10 +17,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: dtolnay/rust-toolchain@stable
-      - name: Install maturin
-        run: pip install maturin
-      - run: maturin develop --release
-      - run: pip install pytest scipy
+      - run: pip install maturin pytest scipy
+      - run: maturin build --release
+      - run: pip install target/wheels/*.whl
       - run: pytest tests/ -v
 
   lint:
@@ -35,5 +34,5 @@ jobs:
           components: rustfmt, clippy
       - run: cargo fmt --check
       - run: cargo clippy -- -D warnings
-      - run: pip install pyright
+      - run: pip install pyright polars
       - run: pyright python/polars_sdist/
