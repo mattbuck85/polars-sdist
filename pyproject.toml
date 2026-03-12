@@ -5,8 +5,23 @@ build-backend = "maturin"
 [project]
 name = "polars-sdist"
 version = "0.1.0"
+description = "Statistical distributions as native Polars expressions — PDF, CDF, PPF, SF, and sampling for 20+ distributions, powered by Rust."
 requires-python = ">=3.9"
 dependencies = ["polars>=1.0"]
+readme = "README.md"
+license = "MIT"
+keywords = ["polars", "statistics", "distributions", "probability", "rust"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+
+[project.urls]
+Homepage = "https://github.com/mattbuck85/polars-sdist"
+Repository = "https://github.com/mattbuck85/polars-sdist"
+Issues = "https://github.com/mattbuck85/polars-sdist/issues"
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "scipy>=1.14", "maturin>=1.7"]
