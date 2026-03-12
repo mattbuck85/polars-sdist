@@ -105,6 +105,37 @@ These distributions support random sampling but not PDF/CDF:
 
 PERT, Skew-Normal, Inverse Gaussian, Frechet, Zeta, Zipf
 
+## Performance
+
+Benchmarked end-to-end against scipy/numpy on 1M elements. Median of 5 runs after warmup.
+
+| Distribution | Operation | polars-sdist | scipy | Speedup |
+|-|-|-|-|-|
+| normal | pdf | 8.6 ms | 36.8 ms | 4.3x |
+| normal | ppf | 20.9 ms | 48.4 ms | 2.3x |
+| normal | sample | 3.6 ms | 7.6 ms | 2.1x |
+| normal | cdf | 23.3 ms | 37.2 ms | 1.6x |
+| lognormal | pdf | 17.1 ms | 63.8 ms | 3.7x |
+| lognormal | sample | 7.2 ms | 12.7 ms | 1.8x |
+| lognormal | ppf | 27.8 ms | 42.3 ms | 1.5x |
+| lognormal | cdf | 32.5 ms | 41.4 ms | 1.3x |
+| binomial | pmf | 32.0 ms | 86.2 ms | 2.7x |
+| binomial | sample | 20.1 ms | 30.5 ms | 1.5x |
+| chi-squared | sample | 10.0 ms | 16.7 ms | 1.7x |
+| chi-squared | pdf | 49.2 ms | 60.9 ms | 1.2x |
+| chi-squared | cdf | 90.3 ms | 110.9 ms | 1.2x |
+| beta | ppf | 517.8 ms | 601.1 ms | 1.2x |
+| beta | pdf | 80.3 ms | 89.5 ms | 1.1x |
+
+polars-sdist is faster in 15 of 19 benchmarks. Areas where scipy is faster (beta CDF/sample, chi-squared PPF, binomial CDF) use highly optimized C/Fortran special-function implementations.
+
+Run it yourself:
+
+```bash
+pip install scipy
+python benchmarks/bench_distributions.py --sizes 1000000
+```
+
 ## License
 
 MIT
