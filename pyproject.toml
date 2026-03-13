@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "polars-sdist"
-version = "0.1.0"
+version = "0.1.1"
 description = "Statistical distributions as native Polars expressions — PDF, CDF, PPF, SF, and sampling for 20+ distributions, powered by Rust."
 requires-python = ">=3.9"
 dependencies = ["polars>=1.0"]
