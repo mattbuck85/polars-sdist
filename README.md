@@ -2,6 +2,11 @@
 
 Statistical distributions as native Polars expressions. Built with Rust and PyO3 for zero-copy, vectorized computation over Polars DataFrames.
 
+## Credits
+
+This project uses the [rand_distr](https://crates.io/crates/rand_distr) Rust crate for statistical distribution logic.
+
+
 ## Install
 
 ```bash
